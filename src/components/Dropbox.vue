@@ -30,9 +30,7 @@
         return moment(time).format(tableSettings.value.timeFormat || stringFormat)
     }
 
-    function addFile(e: any){
-        const files = (e.target as HTMLInputElement).files
-
+    function addFile(files: FileList){
         for (let f = 0; f < files.length; f++ ) {
             const file = files[f]
             const newFile = {
@@ -146,12 +144,12 @@
                      v-else>{{ toKB(dropboxFiles.reduce((sum, file) => sum + file.size, 0)) }} KB / {{ Math.floor(tableSettings.size * 1000)}} KB</p>
                 </div>
 
-                <input type="file" @change="addFile" class="file-input" multiple>
+                <input type="file" @change="addFile($event.target.files)" class="file-input" multiple>
             </div>
         </div>
-        <div class="dropbox">
+        <div class="dropbox" @drop.prevent="addFile($event.dataTransfer.files)" @dragover="$event.target.style.border='dashed'" @dragleave="$event.target.style.border='none'">
             <div v-if="dropboxFiles.length < 1">
-                <p>drop shyt here</p>
+                <p>drop files here</p>
             </div> 
             <table class="dropbox-table" v-else>
                 <tr>
