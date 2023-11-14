@@ -1,10 +1,10 @@
 <script setup>
-    import Navbar from './components/Navbar.vue';
-    import Dropbox from './components/Dropbox.vue'
+import Navbar from "./components/Navbar.vue";
+import Dropbox from "./components/Dropbox.vue";
 </script>
 
 <template>
-    <Navbar/>
+    <Navbar />
     <div class="container">
         <Dropbox />
     </div>
@@ -16,6 +16,6 @@
     justify-content: center;
     align-items: center;
 
-    padding: 3rem 0;
+    padding: 1.5rem 0;
 }
 </style>

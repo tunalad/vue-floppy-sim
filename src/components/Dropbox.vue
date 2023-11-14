@@ -1,107 +1,104 @@
 <script setup lang="ts">
-    import { ref } from 'vue';
-    import moment from 'moment';
+import { ref } from "vue";
+import moment from "moment";
 
-    const dropboxFiles = ref([])
+const dropboxFiles = ref([]);
 
-    const tableSettings = ref({
-        size: 1.44,
-        format: "MB",
-        column: "name",
-        ascending: true,
-        timeFormat: "",
-    })
+const tableSettings = ref({
+    size: 1.44,
+    format: "KB",
+    column: "name",
+    ascending: true,
+    timeFormat: "",
+});
 
-    function toMB(bytes: number) {
-        return (bytes / (1024*1024)).toFixed(1)
+function toMB(bytes: number) {
+    return (bytes / (1024 * 1024)).toFixed(1);
+}
+
+function toKB(bytes: number) {
+    return (bytes / 1024).toFixed(1);
+}
+
+function outOfSpace(maxAllowedSizeMB: number) {
+    const maxSizeBytes = maxAllowedSizeMB * 1048576; // Convert MB to bytes
+    const totalSizeBytes = dropboxFiles.value.reduce(
+        (sum, file) => sum + file.size,
+        0,
+    );
+    return totalSizeBytes >= maxSizeBytes;
+}
+
+function formatTime(time: string, stringFormat = "DD/MM/YYYY, HH:mm") {
+    return moment(time).format(tableSettings.value.timeFormat || stringFormat);
+}
+
+function addFile(files: FileList) {
+    for (let f = 0; f < files.length; f++) {
+        const file = files[f];
+        const newFile = {
+            name: file.name,
+            type: file.type,
+            size: file.size,
+            unixtime: Date.now(),
+        };
+
+        dropboxFiles.value.push(newFile);
     }
+    sortFiles(tableSettings.value.column);
+}
 
-    function toKB(bytes: number) {
-        return (bytes / 1024).toFixed(1)
+function removeFile(file: any) {
+    if (typeof file === "string" && file === "all") {
+        dropboxFiles.value = [];
+        return;
     }
+    dropboxFiles.value = dropboxFiles.value.filter((i) => i.name !== file.name);
+}
 
-    function outOfSpace(maxAllowedSizeMB: number) {
-        const maxSizeBytes = maxAllowedSizeMB * 1048576; // Convert MB to bytes
-        const totalSizeBytes = dropboxFiles.value.reduce((sum, file) => sum + file.size, 0);
-        return totalSizeBytes >= maxSizeBytes;
-    }
+function sortFiles(column: string, reoder = false) {
+    // reodering
+    if (tableSettings.value.column === column && reoder)
+        tableSettings.value.ascending = !tableSettings.value.ascending;
+    else tableSettings.value.ascending = true;
 
-    function formatTime(time: string, stringFormat="DD/MM/YYYY, HH:mm"){
-        return moment(time).format(tableSettings.value.timeFormat || stringFormat)
-    }
+    tableSettings.value.column = column;
 
-    function addFile(files: FileList){
-        for (let f = 0; f < files.length; f++ ) {
-            const file = files[f]
-            const newFile = {
-                name: file.name,
-                type: file.type,
-                size: file.size,
-                unixtime: Date.now(),
-            }
+    // sorting
+    if (tableSettings.value.column === "name")
+        dropboxFiles.value.sort((a, b) => {
+            if (a.name.toUpperCase() < b.name.toUpperCase())
+                return tableSettings.value.ascending ? -1 : 1;
+            else if (a.name.toUpperCase() > b.name.toUpperCase())
+                return tableSettings.value.ascending ? 1 : -1;
+            else return 0;
+        });
 
-            dropboxFiles.value.push(newFile)
-        }
-        sortFiles(tableSettings.value.column);
-    }
-    
-    function removeFile(file: any){
-        if(typeof file === "string" && file === "all") {
-            dropboxFiles.value = []
-            return
-        }
-        dropboxFiles.value = dropboxFiles.value.filter(i => i.name !== file.name)
-    }
+    if (tableSettings.value.column === "size")
+        dropboxFiles.value.sort((a, b) => {
+            if (a.size < b.size) return tableSettings.value.ascending ? -1 : 1;
+            else if (a.size > b.size)
+                return tableSettings.value.ascending ? 1 : -1;
+            else return 0;
+        });
 
-    function sortFiles(column: string, reoder=false){
-        // reodering 
-        if(tableSettings.value.column === column && reoder)
-            tableSettings.value.ascending = !tableSettings.value.ascending;
-        else
-            tableSettings.value.ascending = true
-
-        tableSettings.value.column = column;
-
-        // sorting
-        if(tableSettings.value.column === "name")
-            dropboxFiles.value.sort((a, b) => {
-                if (a.name.toUpperCase() < b.name.toUpperCase())
-                    return tableSettings.value.ascending ? -1 : 1;
-                else if (a.name.toUpperCase() > b.name.toUpperCase())
-                    return tableSettings.value.ascending ? 1 : -1;
-                else
-                    return 0;
-            })
-
-        if(tableSettings.value.column === "size")
-            dropboxFiles.value.sort((a, b) => {
-                if (a.size < b.size)
-                    return tableSettings.value.ascending ? -1 : 1;
-                else if (a.size > b.size)
-                    return tableSettings.value.ascending ? 1 : -1;
-                else
-                    return 0;
-            })
-
-        if(tableSettings.value.column === "type")
-            dropboxFiles.value.sort((a, b) => {
-                if (a.type.toUpperCase() < b.type.toUpperCase())
-                    return tableSettings.value.ascending ? -1 : 1;
-                else if (a.type.toUpperCase() > b.type.toUpperCase())
-                    return tableSettings.value.ascending ? 1 : -1;
-                else
-                    return 0;
-            })
-        if(tableSettings.value.column === "date")
-            dropboxFiles.value.sort((a, b) => {
-                if (a.unixtime < b.unixtime)
-                    return tableSettings.value.ascending ? -1 : 1;
-                else if (a.unixtime > b.unixtime)
-                    return tableSettings.value.ascending ? 1 : -1;
-                else
-                    return 0;
-            })
-    }
+    if (tableSettings.value.column === "type")
+        dropboxFiles.value.sort((a, b) => {
+            if (a.type.toUpperCase() < b.type.toUpperCase())
+                return tableSettings.value.ascending ? -1 : 1;
+            else if (a.type.toUpperCase() > b.type.toUpperCase())
+                return tableSettings.value.ascending ? 1 : -1;
+            else return 0;
+        });
+    if (tableSettings.value.column === "date")
+        dropboxFiles.value.sort((a, b) => {
+            if (a.unixtime < b.unixtime)
+                return tableSettings.value.ascending ? -1 : 1;
+            else if (a.unixtime > b.unixtime)
+                return tableSettings.value.ascending ? 1 : -1;
+            else return 0;
+        });
+}
 </script>
 
 <template>
@@ -120,9 +117,21 @@
 
                 <div class="floppy-size-format">
                     <form>
-                        <span>shown in:</span> <br>
-                        <input type="radio" id="MB" value="MB" v-model="tableSettings.format"> <label for="MB">MB</label>
-                        <input type="radio" id="KB" value="KB" v-model="tableSettings.format"> <label for="KB">KB</label>
+                        <span>shown in:</span> <br />
+                        <input
+                            type="radio"
+                            id="MB"
+                            value="MB"
+                            v-model="tableSettings.format"
+                        />
+                        <label for="MB">MB</label>
+                        <input
+                            type="radio"
+                            id="KB"
+                            value="KB"
+                            v-model="tableSettings.format"
+                        />
+                        <label for="KB">KB</label>
                     </form>
                 </div>
             </div>
@@ -130,41 +139,95 @@
             <!-- middle -->
             <div class="time-format">
                 <span>time format: </span>
-                <input type="text" v-model="tableSettings.timeFormat" placeholder="DD/MM/YYYY, HH:mm">
-                <br>
-                <small>(time format documentation can be found <a target="_blank" href="https://momentjs.com/docs/#/displaying/format/">here</a>)</small>
+                <input
+                    type="text"
+                    v-model="tableSettings.timeFormat"
+                    placeholder="DD/MM/YYYY, HH:mm"
+                />
+                <br />
+                <small
+                    >(time format documentation can be found
+                    <a
+                        target="_blank"
+                        href="https://momentjs.com/docs/#/displaying/format/"
+                        >here</a
+                    >)</small
+                >
             </div>
 
             <!-- bottom -->
             <div class="floppy-stats-row">
                 <div class="floppy-size-total">
-                    <p :class="{ 'error' : outOfSpace(tableSettings.size) }" 
-                     v-if="tableSettings.format === 'MB'">{{ toMB(dropboxFiles.reduce((sum, file) => sum + file.size, 0)) }} MB / {{ tableSettings.size }} MB</p>
-                    <p :class="{ 'error' : outOfSpace(tableSettings.size) }"
-                     v-else>{{ toKB(dropboxFiles.reduce((sum, file) => sum + file.size, 0)) }} KB / {{ Math.floor(tableSettings.size * 1000)}} KB</p>
+                    <p
+                        :class="{ error: outOfSpace(tableSettings.size) }"
+                        v-if="tableSettings.format === 'MB'"
+                    >
+                        {{
+                            toMB(
+                                dropboxFiles.reduce(
+                                    (sum, file) => sum + file.size,
+                                    0,
+                                ),
+                            )
+                        }}
+                        MB / {{ tableSettings.size }} MB
+                    </p>
+                    <p
+                        :class="{ error: outOfSpace(tableSettings.size) }"
+                        v-else
+                    >
+                        {{
+                            toKB(
+                                dropboxFiles.reduce(
+                                    (sum, file) => sum + file.size,
+                                    0,
+                                ),
+                            )
+                        }}
+                        KB / {{ Math.floor(tableSettings.size * 1000) }} KB
+                    </p>
                 </div>
 
-                <input type="file" @change="addFile($event.target.files)" class="file-input" multiple>
+                <input
+                    type="file"
+                    @change="addFile($event.target.files)"
+                    class="file-input"
+                    multiple
+                />
             </div>
         </div>
-        <div class="dropbox" @drop.prevent="addFile($event.dataTransfer.files)" @dragover="$event.target.style.border='dashed'" @dragleave="$event.target.style.border='none'">
+        <div
+            class="dropbox"
+            @drop.prevent="addFile($event.dataTransfer.files)"
+            @dragover="$event.target.style.border = 'dashed'"
+            @dragleave="$event.target.style.border = 'none'"
+        >
             <div v-if="dropboxFiles.length < 1">
                 <p>drop files here</p>
-            </div> 
+            </div>
             <table class="dropbox-table" v-else>
-                <tr>
+                <tr class="table-header">
                     <th @click="removeFile('all')"><button>🗑️</button></th>
                     <th><a @click="sortFiles('name', true)">name</a></th>
                     <th><a @click="sortFiles('size', true)">size</a></th>
                     <th><a @click="sortFiles('type', true)">file type</a></th>
                     <th><a @click="sortFiles('date', true)">date added</a></th>
                 </tr>
-                <tr v-for="file in dropboxFiles" :class="{ 'error': file.size >= tableSettings.size * 1048576 }">
-                    <td><button href="#" @click="removeFile(file)">🗑️</button></td>
+                <tr
+                    v-for="file in dropboxFiles"
+                    :class="{
+                        error: file.size >= tableSettings.size * 1048576,
+                    }"
+                >
+                    <td>
+                        <button href="#" @click="removeFile(file)">🗑️</button>
+                    </td>
                     <td>{{ file.name }}</td>
                     <td>
-                        <span v-if="tableSettings.format === 'MB'">{{ toMB(file.size) }} MB</span>
-                        <span v-else>{{ toKB(file.size) }} KB</span>
+                        <template v-if="tableSettings.format === 'MB'"
+                            >{{ toMB(file.size) }} MB</template
+                        >
+                        <template v-else>{{ toKB(file.size) }} KB</template>
                     </td>
                     <td>{{ file.type }}</td>
                     <td>{{ formatTime(file.unixtime) }}</td>
@@ -218,6 +281,12 @@
     justify-content: center;
 }
 
+.table-header,
+td:first-child {
+    background: rgba(0, 0, 0, 0.25);
+    padding: 0;
+}
+
 p {
     padding: 0 0.5rem;
 }
@@ -235,7 +304,15 @@ tr {
     padding: 0 0.5rem;
 }
 
+td {
+    padding-left: 0.25rem;
+}
+
 small {
     opacity: 50%;
+}
+
+button {
+    width: 100%;
 }
 </style>

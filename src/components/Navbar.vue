@@ -1,10 +1,11 @@
 <template>
     <nav>
-        <ul>
+        <!--<ul>
             <li><a href="#">floppy</a></li>
             <li><a href="#">about</a></li>
             <li><a href="#">settings</a></li>
-        </ul>
+        </ul>-->
+        <b>vue-floppy-sim</b>
     </nav>
 </template>
 
@@ -27,5 +28,4 @@ nav {
         }
     }
 }
-
 </style>
